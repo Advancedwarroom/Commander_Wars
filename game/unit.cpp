@@ -3210,40 +3210,73 @@ void Unit::createMoveVisionFromAction(GameAction* pAction)
 QVector<QVector3D> Unit::getVisionFields(QPoint position)
 {
     QVector<QVector3D> visionFields;
+    const QVector<QPoint> footprint = getUnitFootprint();
+    const bool visionBlock = m_pMap->getGameRules()->getVisionBlock();
 
-    bool visionBlock = m_pMap->getGameRules()->getVisionBlock();
-    spQmlVectorPoint pCircle;
-    qint32 visionRange = getVision(position);
-    Terrain* pTerrain = m_pMap->getTerrain(position.x(), position.y());
-    if (visionBlock)
+    // Each occupied tile is a valid observation origin for a multi-tile unit.
+    // Merge the resulting fields so overlapping vision circles are counted once.
+    for (const QPoint & offset : footprint)
     {
-        pCircle = m_pMap->getSpVisionCircle(position.x(), position.y(), 0, visionRange,  getVisionHigh() + pTerrain->getTotalVisionHigh());
-    }
-    else
-    {
-        pCircle = GlobalUtils::getSpCircle(0, visionRange);
-    }
-    for (qint32 i2 = 0; i2 < pCircle->size(); i2++)
-    {
-        QPoint circleField = pCircle->at(i2);
-        QPoint field = circleField + QPoint(position.x(), position.y());
-        if (m_pMap->onMap(field.x(), field.y()))
+        const QPoint origin = position + offset;
+        if (!m_pMap->onMap(origin.x(), origin.y()))
         {
-            if (qAbs(circleField.x()) + qAbs(circleField.y()) <= 1)
+            continue;
+        }
+
+        spQmlVectorPoint pCircle;
+        const qint32 visionRange = getVision(origin);
+        Terrain* pOriginTerrain = m_pMap->getTerrain(origin.x(), origin.y());
+        if (visionBlock)
+        {
+            pCircle = m_pMap->getSpVisionCircle(origin.x(), origin.y(), 0, visionRange,
+                                                getVisionHigh() + pOriginTerrain->getTotalVisionHigh());
+        }
+        else
+        {
+            pCircle = GlobalUtils::getSpCircle(0, visionRange);
+        }
+
+        for (qint32 i = 0; i < pCircle->size(); ++i)
+        {
+            const QPoint circleField = pCircle->at(i);
+            const QPoint field = circleField + origin;
+            if (!m_pMap->onMap(field.x(), field.y()))
             {
-                visionFields.append(QVector3D(field.x(), field.y(), true));
+                continue;
             }
-            else
+
+            const bool closeField = qAbs(circleField.x()) + qAbs(circleField.y()) <= 1;
+            bool visible = closeField;
+            if (!closeField)
             {
                 Terrain* pTerrain = m_pMap->getTerrain(field.x(), field.y());
                 Unit* pUnit = pTerrain->getUnit();
-                bool visionHide = pTerrain->getVisionHide(m_pOwner);
-                if ((!visionHide) ||
-                    ((pUnit != nullptr) && visionHide &&
-                     !pUnit->useTerrainHide() && !pUnit->isStatusStealthed()))
+                const bool visionHide = pTerrain->getVisionHide(m_pOwner);
+                visible = !visionHide ||
+                          ((pUnit != nullptr) && !pUnit->useTerrainHide() && !pUnit->isStatusStealthed());
+            }
+            if (!visible)
+            {
+                continue;
+            }
+
+            qint32 existingIndex = -1;
+            for (qint32 j = 0; j < visionFields.size(); ++j)
+            {
+                if (static_cast<qint32>(visionFields[j].x()) == field.x() &&
+                    static_cast<qint32>(visionFields[j].y()) == field.y())
                 {
-                    visionFields.append(QVector3D(field.x(), field.y(), false));
+                    existingIndex = j;
+                    break;
                 }
+            }
+            if (existingIndex < 0)
+            {
+                visionFields.append(QVector3D(field.x(), field.y(), closeField));
+            }
+            else if (closeField && !visionFields[existingIndex].z())
+            {
+                visionFields[existingIndex].setZ(true);
             }
         }
     }
