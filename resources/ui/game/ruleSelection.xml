@@ -294,6 +294,22 @@
                     <onEvent>currentMenu.getMap().getGameRules().setWeatherPrediction(input);</onEvent>
                     <enabled>currentMenu.getRuleChangeEabled()</enabled>
                 </Checkbox>
+                <Label>
+                    <x>5</x>
+                    <y>lastY + lastHeight + 10</y>
+                    <width>300</width>
+                    <text>QT_TRANSLATE_NOOP("GAME","Local Weather:")</text>
+                    <font>"main"</font>
+                    <fontSize>24</fontSize>
+                </Label>
+                <Checkbox>
+                    <x>lastX + lastWidth + 10</x>
+                    <y>lastY</y>
+                    <tooltip>QT_TRANSLATE_NOOP("GAME","If checked, weather effects can be assigned to individual map tiles.")</tooltip>
+                    <startValue>currentMenu.getMap().getGameRules().getLocalWeather()</startValue>
+                    <onEvent>currentMenu.getMap().getGameRules().setLocalWeather(input);</onEvent>
+                    <enabled>currentMenu.getRuleChangeEabled()</enabled>
+                </Checkbox>
                 <loop count="gameRuleManager.getGameRuleCount()">
                     <if condition="currentMenu.getMap().getGameRules().hasGameRule(gameRuleManager.getGameRuleID(loopIdx))">
                         <loop count="RuleSelectionScript.getGameRuleElementCount(loopIdx)">
