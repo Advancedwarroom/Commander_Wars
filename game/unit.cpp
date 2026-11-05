@@ -2835,6 +2835,26 @@ qint32 Unit::getBonusMovementpoints(QPoint position)
             movementModifier += pPlayer->getCoBonus(position, this, "getOtherMovementpointModifier");
         }
     }
+
+    // Apply every weather layer on the destination tile to movement points.
+    // Weather immunity suppresses both global and local weather modifiers.
+    if (m_pMap != nullptr && m_pMap->getGameRules() != nullptr &&
+        m_pMap->getGameRules()->getLocalWeather() && !getWeatherImmune())
+    {
+        Terrain* pWeatherTerrain = m_pMap->getTerrain(position.x(), position.y());
+        if (pWeatherTerrain != nullptr)
+        {
+            const QStringList localWeather = pWeatherTerrain->getLocalWeatherIds();
+            for (const QString & weatherId : localWeather)
+            {
+                Weather* pLocalWeather = m_pMap->getGameRules()->getWeather(weatherId);
+                if (pLocalWeather != nullptr)
+                {
+                    movementModifier += pLocalWeather->getMovementpointModifier(this, pWeatherTerrain);
+                }
+            }
+        }
+    }
     return movementModifier;
 }
 
