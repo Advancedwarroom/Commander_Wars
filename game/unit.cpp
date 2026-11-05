@@ -1394,17 +1394,23 @@ Unit* Unit::getLoadedUnit(qint32 index) const
 
 void Unit::unloadUnit(Unit* pUnit, QPoint position)
 {
-
     if (m_pMap != nullptr && m_pMap->onMap(position.x(), position.y()))
     {
         for (qint32 i = 0; i < m_TransportUnits.size(); i++)
         {
             if (m_TransportUnits[i].get() == pUnit)
             {
-                m_pMap->getTerrain(position.x(), position.y())->setUnit(m_TransportUnits[i]);
-                m_TransportUnits[i]->updateIcons(m_pMap->getCurrentViewPlayer());
-                m_TransportUnits[i]->showRanges();
-                m_TransportUnits.removeAt(i);
+                spUnit unloadingUnit = m_TransportUnits[i];
+                Terrain* pTarget = m_pMap->getTerrain(position.x(), position.y());
+                pTarget->setUnit(unloadingUnit);
+                // setUnit rejects placements whose complete footprint is blocked
+                // or extends beyond the map. Keep the passenger aboard on failure.
+                if (pTarget->getSpUnit() == unloadingUnit)
+                {
+                    unloadingUnit->updateIcons(m_pMap->getCurrentViewPlayer());
+                    unloadingUnit->showRanges();
+                    m_TransportUnits.removeAt(i);
+                }
                 break;
             }
         }
@@ -1414,16 +1420,22 @@ void Unit::unloadUnit(Unit* pUnit, QPoint position)
 
 void Unit::unloadUnitAtIndex(qint32 index, QPoint position)
 {
-
     if (index >= 0 && index < m_TransportUnits.size())
     {
         if (m_pMap != nullptr && m_pMap->onMap(position.x(), position.y()))
         {
-            m_pMap->getTerrain(position.x(), position.y())->setUnit(m_TransportUnits[index]);
-            m_TransportUnits[index]->updateIcons(m_pMap->getCurrentViewPlayer());
-            m_TransportUnits[index]->showRanges();
+            spUnit unloadingUnit = m_TransportUnits[index];
+            Terrain* pTarget = m_pMap->getTerrain(position.x(), position.y());
+            pTarget->setUnit(unloadingUnit);
+            // Do not remove a passenger from cargo unless its full footprint
+            // was actually registered at the requested destination.
+            if (pTarget->getSpUnit() == unloadingUnit)
+            {
+                unloadingUnit->updateIcons(m_pMap->getCurrentViewPlayer());
+                unloadingUnit->showRanges();
+                m_TransportUnits.removeAt(index);
+            }
         }
-        m_TransportUnits.removeAt(index);
     }
     if (m_pMap != nullptr)
     {
