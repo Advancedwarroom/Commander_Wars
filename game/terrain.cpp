@@ -423,12 +423,29 @@ bool Terrain::addLocalWeather(const QString & weatherId)
         return false;
     }
     m_LocalWeatherIds.append(weatherId);
+    Weather* pWeather = m_pMap->getGameRules()->getWeather(weatherId);
+    if (pWeather != nullptr)
+    {
+        onWeatherChanged(pWeather);
+    }
     return true;
 }
 
 bool Terrain::removeLocalWeather(const QString & weatherId)
 {
-    return m_LocalWeatherIds.removeOne(weatherId);
+    if (!m_LocalWeatherIds.removeOne(weatherId))
+    {
+        return false;
+    }
+    if (m_pMap != nullptr && m_pMap->getGameRules() != nullptr)
+    {
+        Weather* pWeather = m_pMap->getGameRules()->getWeather(weatherId);
+        if (pWeather != nullptr)
+        {
+            onWeatherChanged(pWeather);
+        }
+    }
+    return true;
 }
 
 QStringList Terrain::getLocalWeatherIds() const
