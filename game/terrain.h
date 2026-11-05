@@ -657,6 +657,7 @@ public:
      * @param pWeather
      */
     Q_INVOKABLE void onWeatherChanged(Weather* pWeather);
+    void onLocalWeatherChanged(Weather* pWeather, bool added);
 
     Q_INVOKABLE bool getShowInWiki();
 protected:
