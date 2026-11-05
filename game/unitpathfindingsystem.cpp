@@ -97,14 +97,14 @@ qint32 UnitPathFindingSystem::getCosts(qint32 index, qint32 x, qint32 y, qint32 
                 }
                 else
                 {
-                    qint32 cost = m_pUnit->getMovementCosts(x, y, curX, curY);
+                    qint32 cost = m_pUnit->getFootprintMovementCosts(x, y, curX, curY);
                     m_costInfo.insert(id, cost);
                     m_movecosts[index][direction] = cost;
                 }
             }
             else
             {
-                m_movecosts[index][direction] = m_pUnit->getMovementCosts(x, y, curX, curY);
+                m_movecosts[index][direction] = m_pUnit->getFootprintMovementCosts(x, y, curX, curY);
             }
             return m_movecosts[index][direction];
         }
