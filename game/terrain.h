@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QVector>
+#include <QStringList>
 
 #include "coreengine/fileserializable.h"
 #include "coreengine/JsCallback.h"
@@ -90,6 +91,10 @@ public:
      * @return
      */
     spUnit getSpUnit();
+    /** Tile-local weather IDs. A tile can contain up to four distinct weather types. */
+    Q_INVOKABLE bool addLocalWeather(const QString & weatherId);
+    Q_INVOKABLE bool removeLocalWeather(const QString & weatherId);
+    Q_INVOKABLE QStringList getLocalWeatherIds() const;
     /**
      * @brief setBuilding
      * @param pBuilding
@@ -120,7 +125,7 @@ public:
      */
     inline virtual qint32 getVersion() const override
     {
-        return 14;
+        return 15;
     }
     /**
      * @brief isValid
@@ -749,6 +754,7 @@ private:
       * the unit at this position
       */
     spUnit m_Unit{nullptr};
+    QStringList m_LocalWeatherIds;
     /**
       * hp of this unit
       */
