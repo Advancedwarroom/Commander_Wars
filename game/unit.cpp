@@ -2308,13 +2308,6 @@ qint32 Unit::getFootprintMovementCosts(qint32 x, qint32 y, qint32 curX, qint32 c
         {
             return -1;
         }
-        Unit* pOccupyingUnit = pTerrain->getUnit();
-        if (pOccupyingUnit != nullptr && pOccupyingUnit != this &&
-            m_pOwner != nullptr && m_pOwner->isEnemyUnit(pOccupyingUnit) &&
-            !pOccupyingUnit->isStealthed(m_pOwner) && !getIgnoreUnitCollision())
-        {
-            return -1;
-        }
         const qint32 cost = getMovementCosts(target.x(), target.y(), previous.x(), previous.y());
         if (cost <= 0)
         {
