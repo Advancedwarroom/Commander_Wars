@@ -69,6 +69,11 @@ public:
      */
     void setTerrain(Terrain* pTerrain);
     /**
+     * Returns occupied tile offsets relative to the unit's anchor tile.
+     * Mods may define getUnitFootprint() and return [x, y] offset pairs.
+     */
+    Q_INVOKABLE QVector<QPoint> getUnitFootprint();
+    /**
      * @brief serialize stores the object
      * @param pStream
      */
