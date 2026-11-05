@@ -599,6 +599,11 @@ qint32 Unit::getVision(QPoint position)
             const QStringList localWeather = pWeatherTerrain->getLocalWeatherIds();
             for (const QString & weatherId : localWeather)
             {
+                Weather* pGlobalWeather = m_pMap->getGameRules()->getCurrentWeather();
+                if (pGlobalWeather != nullptr && weatherId == pGlobalWeather->getWeatherId())
+                {
+                    continue;
+                }
                 Weather* pLocalWeather = m_pMap->getGameRules()->getWeather(weatherId);
                 if (pLocalWeather != nullptr)
                 {
@@ -703,6 +708,11 @@ qint32 Unit::getBonusMaxRange(QPoint position)
             const QStringList localWeather = pWeatherTerrain->getLocalWeatherIds();
             for (const QString & weatherId : localWeather)
             {
+                Weather* pGlobalWeather = m_pMap->getGameRules()->getCurrentWeather();
+                if (pGlobalWeather != nullptr && weatherId == pGlobalWeather->getWeatherId())
+                {
+                    continue;
+                }
                 Weather* pLocalWeather = m_pMap->getGameRules()->getWeather(weatherId);
                 if (pLocalWeather != nullptr)
                 {
@@ -791,6 +801,11 @@ qint32 Unit::getBonusMinRange(QPoint position)
             const QStringList localWeather = pWeatherTerrain->getLocalWeatherIds();
             for (const QString & weatherId : localWeather)
             {
+                Weather* pGlobalWeather = m_pMap->getGameRules()->getCurrentWeather();
+                if (pGlobalWeather != nullptr && weatherId == pGlobalWeather->getWeatherId())
+                {
+                    continue;
+                }
                 Weather* pLocalWeather = m_pMap->getGameRules()->getWeather(weatherId);
                 if (pLocalWeather != nullptr)
                 {
@@ -1525,6 +1540,11 @@ qint32 Unit::getBonusOffensive(GameAction* pAction, QPoint position, Unit* pDefe
             const QStringList localWeather = m_pTerrain->getLocalWeatherIds();
             for (const QString & weatherId : localWeather)
             {
+                Weather* pGlobalWeather = m_pMap->getGameRules()->getCurrentWeather();
+                if (pGlobalWeather != nullptr && weatherId == pGlobalWeather->getWeatherId())
+                {
+                    continue;
+                }
                 Weather* pLocalWeather = m_pMap->getGameRules()->getWeather(weatherId);
                 if (pLocalWeather != nullptr)
                 {
@@ -1819,6 +1839,11 @@ qint32 Unit::getBonusDefensive(GameAction* pAction, QPoint position, Unit* pAtta
             const QStringList localWeather = pWeatherTerrain->getLocalWeatherIds();
             for (const QString & weatherId : localWeather)
             {
+                Weather* pGlobalWeather = m_pMap->getGameRules()->getCurrentWeather();
+                if (pGlobalWeather != nullptr && weatherId == pGlobalWeather->getWeatherId())
+                {
+                    continue;
+                }
                 Weather* pLocalWeather = m_pMap->getGameRules()->getWeather(weatherId);
                 if (pLocalWeather != nullptr)
                 {
@@ -2231,6 +2256,11 @@ qint32 Unit::getMovementCosts(qint32 x, qint32 y, qint32 curX, qint32 curY, bool
         const QStringList localWeather = pWeatherTerrain->getLocalWeatherIds();
         for (const QString & weatherId : localWeather)
         {
+            Weather* pGlobalWeather = m_pMap->getGameRules()->getCurrentWeather();
+            if (pGlobalWeather != nullptr && weatherId == pGlobalWeather->getWeatherId())
+            {
+                continue;
+            }
             Weather* pLocalWeather = m_pMap->getGameRules()->getWeather(weatherId);
             if (pLocalWeather != nullptr)
             {
@@ -2847,6 +2877,11 @@ qint32 Unit::getBonusMovementpoints(QPoint position)
             const QStringList localWeather = pWeatherTerrain->getLocalWeatherIds();
             for (const QString & weatherId : localWeather)
             {
+                Weather* pGlobalWeather = m_pMap->getGameRules()->getCurrentWeather();
+                if (pGlobalWeather != nullptr && weatherId == pGlobalWeather->getWeatherId())
+                {
+                    continue;
+                }
                 Weather* pLocalWeather = m_pMap->getGameRules()->getWeather(weatherId);
                 if (pLocalWeather != nullptr)
                 {
@@ -2988,6 +3023,11 @@ qint32 Unit::getMovementFuelCostModifier(qint32 fuelCost)
             const QStringList localWeather = m_pTerrain->getLocalWeatherIds();
             for (const QString & weatherId : localWeather)
             {
+                Weather* pGlobalWeather = m_pMap->getGameRules()->getCurrentWeather();
+                if (pGlobalWeather != nullptr && weatherId == pGlobalWeather->getWeatherId())
+                {
+                    continue;
+                }
                 Weather* pLocalWeather = m_pMap->getGameRules()->getWeather(weatherId);
                 if (pLocalWeather != nullptr)
                 {
