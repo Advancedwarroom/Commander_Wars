@@ -1011,6 +1011,54 @@ qint32 Building::getBuildingHeigth()
         return 0;
     }
 }
+QVector<QPoint> Building::getBuildingFootprint()
+{
+    QVector<QPoint> footprint;
+    Interpreter* pInterpreter = Interpreter::getInstance();
+    QJSValue ret = pInterpreter->doFunction(m_BuildingID, "getBuildingFootprint",
+                                            QJSValueList({GameMap::getMapJsThis(m_pMap)}));
+    if (ret.isArray())
+    {
+        const qint32 length = ret.property("length").toInt();
+        for (qint32 i = 0; i < length; ++i)
+        {
+            QJSValue entry = ret.property(i);
+            if (!entry.isArray() || entry.property("length").toInt() < 2)
+            {
+                continue;
+            }
+            QJSValue xValue = entry.property(0);
+            QJSValue yValue = entry.property(1);
+            if (!xValue.isNumber() || !yValue.isNumber())
+            {
+                continue;
+            }
+            QPoint offset(xValue.toInt(), yValue.toInt());
+            if (!footprint.contains(offset))
+            {
+                footprint.append(offset);
+            }
+        }
+    }
+    if (footprint.isEmpty())
+    {
+        const qint32 width = qMax(1, getBuildingWidth());
+        const qint32 height = qMax(1, getBuildingHeigth());
+        for (qint32 x = 0; x < width; ++x)
+        {
+            for (qint32 y = 0; y < height; ++y)
+            {
+                footprint.append(QPoint(-x, -y));
+            }
+        }
+    }
+    if (!footprint.contains(QPoint(0, 0)))
+    {
+        footprint.prepend(QPoint(0, 0));
+    }
+    return footprint;
+}
+
 
 bool Building::getIsAttackable(qint32 x, qint32 y)
 {
