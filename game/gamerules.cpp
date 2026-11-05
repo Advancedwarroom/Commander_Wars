@@ -1528,7 +1528,15 @@ bool GameRules::getLocalWeather() const
 
 void GameRules::setLocalWeather(bool enabled)
 {
+    if (m_LocalWeather == enabled)
+    {
+        return;
+    }
     m_LocalWeather = enabled;
+    if (m_pMap != nullptr && m_weatherMaster.get() != nullptr)
+    {
+        createWeatherSprites();
+    }
 }
 
 bool GameRules::getWeatherPrediction() const
