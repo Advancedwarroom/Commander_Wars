@@ -410,7 +410,7 @@ void Terrain::syncAnimation(oxygine::timeMS syncTime)
 
 Unit* Terrain::getUnit() const
 {
-    return m_Unit.get();
+    return m_Unit.get() != nullptr ? m_Unit.get() : m_UnitFootprint.get();
 }
 
 bool Terrain::addLocalWeather(const QString & weatherId)
@@ -1352,6 +1352,18 @@ void Terrain::setUnit(spUnit pUnit)
         pUnit->setPriority(getMapTerrainDrawPriority());
         pUnit->setTerrain(m_pMap->getTerrain(Terrain::m_x, Terrain::m_y));
         pUnit->setPosition(Terrain::m_x * GameMap::getImageSize(), Terrain::m_y * GameMap::getImageSize());
+        // Register secondary occupied cells after the anchor has been established.
+        for (const QPoint & offset : pUnit->getUnitFootprint())
+        {
+            if (offset != QPoint(0, 0) && m_pMap->onMap(Terrain::m_x + offset.x(), Terrain::m_y + offset.y()))
+            {
+                Terrain* pFootprintTerrain = m_pMap->getTerrain(Terrain::m_x + offset.x(), Terrain::m_y + offset.y());
+                if (pFootprintTerrain != nullptr)
+                {
+                    pFootprintTerrain->setUnitFootprint(pUnit);
+                }
+            }
+        }
         if (m_pMap)
         {
             Player* pPlayer = m_pMap->getCurrentViewPlayer();
@@ -1371,6 +1383,26 @@ void Terrain::setUnit(spUnit pUnit)
 spUnit Terrain::getSpUnit()
 {
     return m_Unit;
+}
+
+void Terrain::setUnitFootprint(spUnit pUnit)
+{
+    if (pUnit.get() == nullptr)
+    {
+        return;
+    }
+    if (m_Unit.get() == nullptr || m_Unit.get() == pUnit.get())
+    {
+        m_UnitFootprint = pUnit;
+    }
+}
+
+void Terrain::removeUnitFootprint(Unit* pUnit)
+{
+    if (m_UnitFootprint.get() == pUnit)
+    {
+        m_UnitFootprint.reset();
+    }
 }
 
 QString Terrain::getID()
