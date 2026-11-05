@@ -72,7 +72,6 @@ qint32 UnitPathFindingSystem::getCosts(qint32 index, qint32 x, qint32 y, qint32 
                 for (const QPoint & offset : footprint)
                 {
                     const QPoint target(x + offset.x(), y + offset.y());
-                    const QPoint previous(curX + offset.x(), curY + offset.y());
                     if (footprint.contains(QPoint(target.x() - curX, target.y() - curY)))
                     {
                         continue;
@@ -93,7 +92,6 @@ qint32 UnitPathFindingSystem::getCosts(qint32 index, qint32 x, qint32 y, qint32 
                         m_movecosts[index][direction] = -1;
                         return m_movecosts[index][direction];
                     }
-                    Q_UNUSED(previous);
                 }
                 // check for an enemy on the field
                 if (pUnit != nullptr &&
