@@ -426,7 +426,7 @@ bool Terrain::addLocalWeather(const QString & weatherId)
     Weather* pWeather = m_pMap->getGameRules()->getWeather(weatherId);
     if (pWeather != nullptr)
     {
-        onWeatherChanged(pWeather);
+        onLocalWeatherChanged(pWeather, true);
     }
     return true;
 }
@@ -442,7 +442,7 @@ bool Terrain::removeLocalWeather(const QString & weatherId)
         Weather* pWeather = m_pMap->getGameRules()->getWeather(weatherId);
         if (pWeather != nullptr)
         {
-            onWeatherChanged(pWeather);
+            onLocalWeatherChanged(pWeather, false);
         }
     }
     return true;
@@ -520,6 +520,17 @@ bool Terrain::getShowInWiki()
         return result.toBool();
     }
     return true;
+}
+
+void Terrain::onLocalWeatherChanged(Weather* pWeather, bool added)
+{
+    Interpreter* pInterpreter = Interpreter::getInstance();
+    QString function = "onLocalWeatherChanged";
+    QJSValueList args({m_jsThis,
+                       JsThis::getJsThis(pWeather),
+                       added,
+                       GameMap::getMapJsThis(m_pMap)});
+    pInterpreter->doFunction(m_terrainID, function, args);
 }
 
 void Terrain::onWeatherChanged(Weather* pWeather)
