@@ -413,6 +413,29 @@ Unit* Terrain::getUnit() const
     return m_Unit.get();
 }
 
+bool Terrain::addLocalWeather(const QString & weatherId)
+{
+    if (weatherId.isEmpty() || m_LocalWeatherIds.contains(weatherId) ||
+        m_LocalWeatherIds.size() >= 4 || m_pMap == nullptr ||
+        m_pMap->getGameRules() == nullptr ||
+        m_pMap->getGameRules()->getWeather(weatherId) == nullptr)
+    {
+        return false;
+    }
+    m_LocalWeatherIds.append(weatherId);
+    return true;
+}
+
+bool Terrain::removeLocalWeather(const QString & weatherId)
+{
+    return m_LocalWeatherIds.removeOne(weatherId);
+}
+
+QStringList Terrain::getLocalWeatherIds() const
+{
+    return m_LocalWeatherIds;
+}
+
 Building* Terrain::getBuilding() const
 {
     return m_Building.get();
@@ -1901,6 +1924,7 @@ void Terrain::serializeObject(QDataStream& pStream, bool forHash) const
         pStream << m_palette;
         m_AnimationVariables.serializeObject(pStream);
     }
+    pStream << m_LocalWeatherIds;
 }
 
 void Terrain::deserializeObject(QDataStream& pStream)
@@ -2087,6 +2111,14 @@ void Terrain::deserializer(QDataStream& pStream, bool fast)
     if (version > 12)
     {
         m_AnimationVariables.deserializeObject(pStream);
+    }
+    if (version > 14)
+    {
+        pStream >> m_LocalWeatherIds;
+        if (m_LocalWeatherIds.size() > 4)
+        {
+            m_LocalWeatherIds = m_LocalWeatherIds.mid(0, 4);
+        }
     }
 }
 
