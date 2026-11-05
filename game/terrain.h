@@ -80,6 +80,10 @@ public:
      * @param pUnit
      */
     void setUnit(spUnit pUnit);
+    /** Registers this unit on a non-anchor tile of its footprint. */
+    void setUnitFootprint(spUnit pUnit);
+    /** Clears a non-anchor occupancy reference only when owned by pUnit. */
+    void removeUnitFootprint(Unit* pUnit);
 
     /**
      * @brief setBuilding will place the building on this terrain ignoring all rules nullptr to remove it.
@@ -755,6 +759,7 @@ private:
       * the unit at this position
       */
     spUnit m_Unit{nullptr};
+    spUnit m_UnitFootprint{nullptr};
     QStringList m_LocalWeatherIds;
     /**
       * hp of this unit
