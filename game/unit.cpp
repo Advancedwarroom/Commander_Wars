@@ -202,6 +202,23 @@ void Unit::setOwner(Player* pOwner)
 
 void Unit::setTerrain(Terrain* pTerrain)
 {
+    if (m_pTerrain != nullptr && m_pTerrain != pTerrain && m_pMap != nullptr)
+    {
+        // Release only secondary cells; the anchor tile owns the shared unit pointer.
+        for (const QPoint & offset : getUnitFootprint())
+        {
+            if (offset != QPoint(0, 0) && m_pMap->onMap(m_pTerrain->getX() + offset.x(),
+                                                        m_pTerrain->getY() + offset.y()))
+            {
+                Terrain* pFootprintTerrain = m_pMap->getTerrain(m_pTerrain->getX() + offset.x(),
+                                                                 m_pTerrain->getY() + offset.y());
+                if (pFootprintTerrain != nullptr)
+                {
+                    pFootprintTerrain->removeUnitFootprint(this);
+                }
+            }
+        }
+    }
     m_pTerrain = pTerrain;
 }
 
