@@ -1267,19 +1267,16 @@ void Terrain::removeBuilding()
         {
             // remove it
             m_Building->detachAndRemove();
-            qint32 width = m_Building->getBuildingWidth();
-            qint32 heigth = m_Building->getBuildingHeigth();
-            
-            // remove pointers
-            for (qint32 x1 = 0; x1 < width; x1++)
+            // Remove only occupied footprint cells; holes in irregular buildings stay free.
+            const QVector<QPoint> footprint = m_Building->getBuildingFootprint();
+            for (const QPoint & offset : footprint)
             {
-                for (qint32 y1 = 0; y1 < heigth; y1++)
+                if (offset != QPoint(0, 0) && m_pMap->onMap(m_x + offset.x(), m_y + offset.y()))
                 {
-                    // remove down stream on all other fields
-                    if (!((x1 == 0) && (y1 == 0)) &&
-                        m_pMap->onMap(m_x - x1, m_y - y1))
+                    Terrain* pDownstream = m_pMap->getTerrain(m_x + offset.x(), m_y + offset.y());
+                    if (pDownstream != nullptr && pDownstream->getSpBuilding() == m_Building)
                     {
-                        m_pMap->getTerrain(m_x - x1, m_y - y1)->removeDownstream();
+                        pDownstream->removeDownstream();
                     }
                 }
             }
@@ -2152,22 +2149,16 @@ void Terrain::deserializer(QDataStream& pStream, bool fast)
 
 void Terrain::createBuildingDownStream()
 {
-    qint32 width = m_Building->getBuildingWidth();
-    qint32 heigth = m_Building->getBuildingHeigth();
-    
-    // recreate pointers
-    for (qint32 x1 = 0; x1 < width; x1++)
+    // Register only occupied footprint cells; empty mask cells remain independent terrain.
+    const QVector<QPoint> footprint = m_Building->getBuildingFootprint();
+    for (const QPoint & offset : footprint)
     {
-        for (qint32 y1 = 0; y1 < heigth; y1++)
+        if (offset != QPoint(0, 0))
         {
-            // create down stream on all other fields
-            if (!((x1 == 0) && (y1 == 0)))
+            Terrain* pTerrain = m_pMap->getTerrain(m_x + offset.x(), m_y + offset.y());
+            if (pTerrain != nullptr)
             {
-                auto* pTerrain = m_pMap->getTerrain(m_x - x1, m_y - y1);
-                if (pTerrain != nullptr)
-                {
-                    pTerrain->setSpBuilding(m_Building, true);
-                }
+                pTerrain->setSpBuilding(m_Building, true);
             }
         }
     }
