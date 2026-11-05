@@ -1,0 +1,137 @@
+name: Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - experiment/local-weather-2x2
+    paths:
+      - '**'
+      - '.github/workflows/android-apk.yml'
+
+permissions:
+  contents: read
+
+env:
+  QT_VERSION: '6.10.3'
+  ANDROID_OPEN_SSL_TAG: '57056d6dd94c235a67b1bc0e4befdba8f9e11c8d'
+  BUILD_TYPE: Release
+
+jobs:
+  build-apk:
+    name: Build Android APK (${{matrix.abi}})
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - abi: arm64-v8a
+            qt_arch: android_arm64_v8a
+            openssl_path: android_openssl/ssl_3/arm64-v8a
+            artifact_name: Commander-Wars-Android-arm64-v8a
+          - abi: armeabi-v7a
+            qt_arch: android_armv7
+            openssl_path: android_openssl/ssl_3/armeabi-v7a
+            artifact_name: Commander-Wars-Android-armeabi-v7a
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Checkout Android OpenSSL
+        uses: actions/checkout@v4
+        with:
+          repository: KDAB/android_openssl
+          ref: ${{env.ANDROID_OPEN_SSL_TAG}}
+          path: android_openssl
+
+      - name: Install host Qt tools
+        uses: jurplel/install-qt-action@v4
+        with:
+          target: desktop
+          version: ${{env.QT_VERSION}}
+          arch: win64_mingw
+          dir: ${{github.workspace}}/qt
+          install-deps: true
+
+      - name: Install Android Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          host: windows
+          target: android
+          version: ${{env.QT_VERSION}}
+          arch: ${{matrix.qt_arch}}
+          modules: qtmultimedia
+          dir: ${{github.workspace}}/qt
+          install-deps: true
+          set-env: true
+
+      - name: Install build tools
+        run: choco install ninja -y
+
+      - name: Configure Android build
+        run: |
+          cmake \
+            -S "${{github.workspace}}" \
+            -B "${{github.workspace}}/build" \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE="${{env.BUILD_TYPE}}" \
+            -DCMAKE_PREFIX_PATH="${{github.workspace}}/qt/Qt/${{env.QT_VERSION}}/${{matrix.qt_arch}}/" \
+            -DQt6_DIR="${{github.workspace}}/qt/Qt/${{env.QT_VERSION}}/${{matrix.qt_arch}}/lib/cmake/Qt6/" \
+            -DQT_QMAKE_EXECUTABLE="${{github.workspace}}/qt/Qt/${{env.QT_VERSION}}/${{matrix.qt_arch}}/bin/qmake.bat" \
+            -DANDROID_NATIVE_API_LEVEL=26 \
+            -DANDROID_NDK="${ANDROID_NDK_ROOT}" \
+            -DCMAKE_TOOLCHAIN_FILE="${ANDROID_NDK_ROOT}/build/cmake/android.toolchain.cmake" \
+            -DANDROID_USE_LEGACY_TOOLCHAIN_FILE=ON \
+            -DANDROID_ABI="${{matrix.abi}}" \
+            -DANDROID_STL=c++_static \
+            -DCMAKE_FIND_ROOT_PATH="${{github.workspace}}/qt/Qt/${{env.QT_VERSION}}/${{matrix.qt_arch}}/" \
+            -DQT_NO_GLOBAL_APK_TARGET_PART_OF_ALL=ON \
+            -DQT_HOST_PATH="${{github.workspace}}/qt/Qt/${{env.QT_VERSION}}/mingw_64" \
+            -DANDROID_SDK_ROOT="${ANDROID_SDK_ROOT}" \
+            -DOPENSSL_LIB_PATH="${{github.workspace}}/${{matrix.openssl_path}}" \
+            -DOPENSSL_INCLUDE_DIR="${{github.workspace}}/android_openssl/ssl_3/include" \
+            -DOPENSSL_USE_STATIC_LIBS=ON \
+            -DPRECOMPILEDOPENSSL=ON \
+            -DUPDATESUPPORT=OFF \
+            -DDEFAULTAIPIPE=OFF \
+            -DCMAKE_INSTALL_PREFIX="${{github.workspace}}/install"
+
+      - name: Compile Commander Wars
+        run: cmake --build "${{github.workspace}}/build" --target all --parallel 4
+
+      - name: Package release APK
+        env:
+          JAVA_HOME: ${{env.JAVA_HOME}}
+        run: |
+          "${{github.workspace}}/qt/Qt/${{env.QT_VERSION}}/mingw_64/bin/androiddeployqt.exe" \
+            --input "${{github.workspace}}/build/android-Commander_Wars-deployment-settings.json" \
+            --output "${{github.workspace}}/build/android-build" \
+            --android-platform android-35 \
+            --gradle \
+            --release
+
+      - name: Verify APK output
+        shell: pwsh
+        run: |
+          $apk = "${{github.workspace}}/build/android-build/build/outputs/apk/release/android-build-release-unsigned.apk"
+          if (!(Test-Path $apk)) {
+            Write-Error "APK was not produced: $apk"
+            exit 1
+          }
+          Get-Item $apk | Format-List FullName,Length,LastWriteTime
+          Copy-Item $apk "${{github.workspace}}/Commander-Wars-${{matrix.abi}}-unsigned.apk"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{matrix.artifact_name}}
+          path: Commander-Wars-${{matrix.abi}}-unsigned.apk
+          if-no-files-found: error
+          retention-days: 14
