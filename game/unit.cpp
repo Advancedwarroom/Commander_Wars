@@ -19,6 +19,7 @@
 #include "game/building.h"
 #include "game/player.h"
 #include "game/unit.h"
+#include "game/weather.h"
 #include "game/gameanimation/gameanimation.h"
 
 #include "menue/editormenue.h"
