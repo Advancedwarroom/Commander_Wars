@@ -1,6 +1,7 @@
 #include "3rd_party/oxygine-framework/oxygine/actor/Stage.h"
 
 #include "coreengine/interpreter.h"
+#include "coreengine/gameconsole.h"
 #include "coreengine/globalutils.h"
 
 #include "resource_management/objectmanager.h"
@@ -228,12 +229,14 @@ void DialogModifyTerrain::load()
             pWeatherCheckbox->setChecked(selectedWeather.contains(pWeather->getWeatherId()));
             pWeatherCheckbox->setTooltipText(tr("Add or remove this weather on the selected tile. A tile can have up to four different weather types."));
             const QString weatherId = pWeather->getWeatherId();
-            connect(pWeatherCheckbox.get(), &Checkbox::checkChanged, this, [this, weatherId](bool checked)
+            connect(pWeatherCheckbox.get(), &Checkbox::checkChanged, this, [this, weatherId, pWeatherCheckbox](bool checked)
             {
                 if (checked)
                 {
                     if (!m_pTerrain->addLocalWeather(weatherId))
                     {
+                        // Keep the checkbox consistent with the tile data if the four-layer limit is reached.
+                        pWeatherCheckbox->setChecked(false);
                         CONSOLE_PRINT("Unable to add local weather. A tile supports at most four different weather types.", GameConsole::eWARNING);
                     }
                 }
@@ -243,7 +246,7 @@ void DialogModifyTerrain::load()
                 }
             });
             m_pPanel->addItem(pWeatherCheckbox);
-            y += std::max(pNameLabel->getHeight(), pWeatherCheckbox->getScaledHeight()) + 8;
+            y += qMax(pNameLabel->getHeight(), pWeatherCheckbox->getScaledHeight()) + 8;
         }
     }
 
