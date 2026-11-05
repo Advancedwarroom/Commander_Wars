@@ -73,6 +73,7 @@ public:
      * Mods may define getUnitFootprint() and return [x, y] offset pairs.
      */
     Q_INVOKABLE QVector<QPoint> getUnitFootprint();
+    qint32 getFootprintMovementCosts(qint32 x, qint32 y, qint32 curX, qint32 curY);
     /**
      * @brief serialize stores the object
      * @param pStream
