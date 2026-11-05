@@ -63,7 +63,7 @@ jobs:
       - name: Install Android Qt
         uses: jurplel/install-qt-action@v4
         with:
-          host: windows
+          host: all_os
           target: android
           version: ${{env.QT_VERSION}}
           arch: ${{matrix.qt_arch}}
@@ -117,21 +117,36 @@ jobs:
             --gradle \
             --release
 
-      - name: Verify APK output
+      - name: Sign and verify APK
         shell: pwsh
         run: |
-          $apk = "${{github.workspace}}/build/android-build/build/outputs/apk/release/android-build-release-unsigned.apk"
-          if (!(Test-Path $apk)) {
-            Write-Error "APK was not produced: $apk"
+          $unsignedApk = "${{github.workspace}}/build/android-build/build/outputs/apk/release/android-build-release-unsigned.apk"
+          if (!(Test-Path $unsignedApk)) {
+            Write-Error "APK was not produced: $unsignedApk"
             exit 1
           }
-          Get-Item $apk | Format-List FullName,Length,LastWriteTime
-          Copy-Item $apk "${{github.workspace}}/Commander-Wars-${{matrix.abi}}-unsigned.apk"
+
+          $keystore = Join-Path $env:RUNNER_TEMP "commander-wars-ci.jks"
+          $signedApk = "${{github.workspace}}/Commander-Wars-${{matrix.abi}}.apk"
+          $password = "CommanderWars-CI-Only-2026"
+          & "$env:JAVA_HOME\bin\keytool.exe" -genkeypair -v -keystore $keystore -storepass $password -keypass $password -alias commander-wars-ci -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Commander Wars CI"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          $apksigner = Get-ChildItem "$env:ANDROID_SDK_ROOT\build-tools\*\apksigner.bat" |
+            Sort-Object { [version]$_.Directory.Name } -Descending |
+            Select-Object -First 1
+          if (!$apksigner) { Write-Error "Android apksigner was not found"; exit 1 }
+
+          & $apksigner.FullName sign --ks $keystore --ks-key-alias commander-wars-ci --ks-pass "pass:$password" --key-pass "pass:$password" --out $signedApk $unsignedApk
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & $apksigner.FullName verify --verbose $signedApk
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Get-Item $signedApk | Format-List FullName,Length,LastWriteTime
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{matrix.artifact_name}}
-          path: Commander-Wars-${{matrix.abi}}-unsigned.apk
+          path: Commander-Wars-${{matrix.abi}}.apk
           if-no-files-found: error
           retention-days: 14
