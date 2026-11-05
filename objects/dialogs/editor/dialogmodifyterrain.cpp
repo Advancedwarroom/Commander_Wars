@@ -10,6 +10,8 @@
 #include "coreengine/interpreter.h"
 
 #include "game/gamemap.h"
+#include "game/gamerules.h"
+#include "game/weather.h"
 
 #include "objects/dialogs/editor/dialogmodifyterrain.h"
 #include "objects/dialogs/filedialog.h"
@@ -192,6 +194,58 @@ void DialogModifyTerrain::load()
 
     loadBaseImageview(y, m_pTerrain);
     loadOverlayview(y, m_pTerrain);
+
+    // Tile-local weather is edited per terrain tile and is only available
+    // when the map's Local Weather rule is enabled.
+    if (m_pMap != nullptr && m_pMap->getGameRules() != nullptr &&
+        m_pMap->getGameRules()->getLocalWeather())
+    {
+        spLabel pWeatherLabel = MemoryManagement::create<Label>(m_pPanel->getScaledWidth() - 50);
+        pWeatherLabel->setStyle(style2);
+        pWeatherLabel->setHtmlText(tr("Local Weather"));
+        pWeatherLabel->setPosition(10, y);
+        m_pPanel->addItem(pWeatherLabel);
+        y += pWeatherLabel->getHeight() + 10;
+
+        GameRules* pGameRules = m_pMap->getGameRules();
+        const QStringList selectedWeather = m_pTerrain->getLocalWeatherIds();
+        for (qint32 i = 0; i < pGameRules->getWeatherCount(); ++i)
+        {
+            Weather* pWeather = pGameRules->getWeather(i);
+            if (pWeather == nullptr)
+            {
+                continue;
+            }
+
+            spLabel pNameLabel = MemoryManagement::create<Label>(360);
+            pNameLabel->setStyle(style);
+            pNameLabel->setHtmlText(pWeather->getWeatherName());
+            pNameLabel->setPosition(20, y);
+            m_pPanel->addItem(pNameLabel);
+
+            spCheckbox pWeatherCheckbox = MemoryManagement::create<Checkbox>();
+            pWeatherCheckbox->setPosition(400, y);
+            pWeatherCheckbox->setChecked(selectedWeather.contains(pWeather->getWeatherId()));
+            pWeatherCheckbox->setTooltipText(tr("Add or remove this weather on the selected tile. A tile can have up to four different weather types."));
+            const QString weatherId = pWeather->getWeatherId();
+            connect(pWeatherCheckbox.get(), &Checkbox::checkChanged, this, [this, weatherId](bool checked)
+            {
+                if (checked)
+                {
+                    if (!m_pTerrain->addLocalWeather(weatherId))
+                    {
+                        CONSOLE_PRINT("Unable to add local weather. A tile supports at most four different weather types.", GameConsole::eWARNING);
+                    }
+                }
+                else
+                {
+                    m_pTerrain->removeLocalWeather(weatherId);
+                }
+            });
+            m_pPanel->addItem(pWeatherCheckbox);
+            y += std::max(pNameLabel->getHeight(), pWeatherCheckbox->getScaledHeight()) + 8;
+        }
+    }
 
     m_pPanel->setContentHeigth(y + 60);
     if (m_pTerrain->getFixedSprite())
