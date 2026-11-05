@@ -1803,6 +1803,27 @@ void GameRules::deserializer(QDataStream& pStream, bool)
     {
         pStream >> weatherDuration;
     }
+    // Keep every currently registered weather available for tile-local selection.
+    // Newly installed mod weather receives zero global forecast chance so existing
+    // map weather probabilities and saved forecast indices remain unchanged.
+    for (qint32 i = 0; i < pGameRuleManager->getWeatherCount(); ++i)
+    {
+        const QString weatherId = pGameRuleManager->getWeatherID(i);
+        bool found = false;
+        for (const auto & pWeather : m_Weathers)
+        {
+            if (pWeather->getWeatherId() == weatherId)
+            {
+                found = true;
+                break;
+            }
+        }
+        if (!found)
+        {
+            m_Weathers.append(MemoryManagement::create<Weather>(weatherId, m_pMap));
+            m_WeatherChances.append(0);
+        }
+    }
     pStream >> m_CurrentWeather;
     pStream >> m_StartWeather;
     if (m_StartWeather < 0 || m_StartWeather >= m_Weathers.size())
