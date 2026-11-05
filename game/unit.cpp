@@ -3285,17 +3285,30 @@ QVector<QVector3D> Unit::getVisionFields(QPoint position)
 
 void Unit::moveUnitToField(qint32 x, qint32 y)
 {
-    
-    // reset capture points when moving  a unit
-    setCapturePoints(0);
-
+    if (m_pMap == nullptr || m_pTerrain == nullptr || !m_pMap->onMap(x, y))
+    {
+        return;
+    }
 
     spUnit pUnit = m_pTerrain->getSpUnit();
-    // teleport unit to target position
-    m_pMap->getTerrain(x, y)->setUnit(pUnit);
+    if (pUnit.get() == nullptr)
+    {
+        return;
+    }
+
+    // setUnit validates the complete footprint and leaves the old position
+    // unchanged when the destination is blocked or extends beyond the map.
+    Terrain* pTargetTerrain = m_pMap->getTerrain(x, y);
+    pTargetTerrain->setUnit(pUnit);
+    if (pTargetTerrain->getSpUnit() != pUnit)
+    {
+        return;
+    }
+
+    // Reset capture progress only after the teleport actually succeeded.
+    setCapturePoints(0);
     showRanges();
     pUnit.reset();
-    
 }
 
 void Unit::removeUnit(bool killed)
