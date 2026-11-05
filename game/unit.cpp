@@ -205,6 +205,46 @@ void Unit::setTerrain(Terrain* pTerrain)
     m_pTerrain = pTerrain;
 }
 
+QVector<QPoint> Unit::getUnitFootprint()
+{
+    QVector<QPoint> footprint;
+    Interpreter* pInterpreter = Interpreter::getInstance();
+    QJSValue ret = pInterpreter->doFunction(m_UnitID, "getUnitFootprint",
+                                            QJSValueList({GameMap::getMapJsThis(m_pMap)}));
+    if (ret.isArray())
+    {
+        const qint32 length = ret.property("length").toInt();
+        for (qint32 i = 0; i < length; ++i)
+        {
+            QJSValue entry = ret.property(i);
+            if (!entry.isArray() || entry.property("length").toInt() < 2)
+            {
+                continue;
+            }
+            QJSValue xValue = entry.property(0);
+            QJSValue yValue = entry.property(1);
+            if (!xValue.isNumber() || !yValue.isNumber())
+            {
+                continue;
+            }
+            const QPoint offset(xValue.toInt(), yValue.toInt());
+            if (!footprint.contains(offset))
+            {
+                footprint.append(offset);
+            }
+        }
+    }
+    if (footprint.isEmpty())
+    {
+        footprint.append(QPoint(0, 0));
+    }
+    if (!footprint.contains(QPoint(0, 0)))
+    {
+        footprint.prepend(QPoint(0, 0));
+    }
+    return footprint;
+}
+
 void Unit::addShineTween()
 {
     Mainapp::getInstance()->pauseRendering();
