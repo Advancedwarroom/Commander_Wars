@@ -441,6 +441,12 @@ public:
      */
     Q_INVOKABLE qint32 getBuildingHeigth();
     /**
+     * Returns occupied tile offsets relative to the building anchor.
+     * Mods may return an array of [x, y] pairs from getBuildingFootprint().
+     * The default is the legacy width-by-height rectangle.
+     */
+    QVector<QPoint> getBuildingFootprint();
+    /**
      * @brief getIsAttackable
      * @return
      */
