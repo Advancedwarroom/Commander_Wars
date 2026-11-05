@@ -1468,6 +1468,16 @@ void GameRules::setVisionBlock(bool VisionBlock)
     m_VisionBlock = VisionBlock;
 }
 
+bool GameRules::getLocalWeather() const
+{
+    return m_LocalWeather;
+}
+
+void GameRules::setLocalWeather(bool enabled)
+{
+    m_LocalWeather = enabled;
+}
+
 bool GameRules::getWeatherPrediction() const
 {
     return m_WeatherPrediction;
@@ -1634,6 +1644,7 @@ void GameRules::serializeObject(QDataStream& pStream, bool forHash) const
     pStream << m_coGlobalD2D;
     pStream << static_cast<qint32>(m_aiBehaviorMode);
     m_Variables.serializeObject(pStream);
+    pStream << m_LocalWeather;
 }
 
 void GameRules::deserializeObject(QDataStream& pStream)
@@ -2014,6 +2025,14 @@ void GameRules::deserializer(QDataStream& pStream, bool)
     if (version > AI_BEHAVIOR_SERIALIZATION_VERSION)
     {
         m_Variables.deserializeObject(pStream);
+    }
+    if (version > 35)
+    {
+        pStream >> m_LocalWeather;
+    }
+    else
+    {
+        m_LocalWeather = false;
     }
     CONSOLE_PRINT("Weather prediction for days after restoring " + QString::number(m_WeatherDays.size()), GameConsole::eDEBUG);
 }
