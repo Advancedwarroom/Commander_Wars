@@ -353,11 +353,24 @@ bool UnitPathFindingSystem::isCrossable(Unit* pNodeUnit, qint32 x, qint32 y, qin
             continue;
         }
         Unit* pOccupant = m_pMap->getTerrain(target.x(), target.y())->getUnit();
-        if (pOccupant != nullptr &&
-            pOccupant != m_pUnit &&
-            !blockedByEnemy(pOccupant))
+        if (pOccupant != nullptr && pOccupant != m_pUnit)
         {
-            return false;
+            if (!blockedByEnemy(pOccupant))
+            {
+                return false;
+            }
+
+            // An enemy may be approached only at its anchor node. A secondary
+            // footprint cell must not become a false endpoint just because
+            // Terrain::getUnit() exposes the occupying unit there.
+            Terrain* pEnemyAnchor = pOccupant->getTerrain();
+            if (pOccupant != pNodeUnit ||
+                pEnemyAnchor == nullptr ||
+                pEnemyAnchor->getX() != x ||
+                pEnemyAnchor->getY() != y)
+            {
+                return false;
+            }
         }
     }
 
