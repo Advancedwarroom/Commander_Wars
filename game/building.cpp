@@ -543,14 +543,28 @@ bool Building::canBuildingBePlaced(Terrain* pTerrain)
                        m_jsThis,
                        GameMap::getMapJsThis(m_pMap)});
     QJSValue ret = pInterpreter->doFunction(m_BuildingID, function1, args);
-    if (ret.isBool())
-    {
-        return ret.toBool();
-    }
-    else
+    if (!ret.isBool() || !ret.toBool() || pTerrain == nullptr || m_pMap == nullptr)
     {
         return false;
     }
+    // Validate every occupied mask cell, not just the anchor tile.
+    for (const QPoint & offset : getBuildingFootprint())
+    {
+        const qint32 x = pTerrain->getX() + offset.x();
+        const qint32 y = pTerrain->getY() + offset.y();
+        if (!m_pMap->onMap(x, y))
+        {
+            return false;
+        }
+        Terrain* pFootprintTerrain = m_pMap->getTerrain(x, y);
+        if (pFootprintTerrain == nullptr ||
+            (pFootprintTerrain->getBuilding() != nullptr &&
+             pFootprintTerrain->getBuilding() != this))
+        {
+            return false;
+        }
+    }
+    return true;
 }
 
 QString Building::getName()
