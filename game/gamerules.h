@@ -423,6 +423,8 @@ public:
      * @brief getWeatherPrediction
      * @return
      */
+    Q_INVOKABLE bool getLocalWeather() const;
+    Q_INVOKABLE void setLocalWeather(bool enabled);
     Q_INVOKABLE bool getWeatherPrediction() const;
     /**
      * @brief setWeatherPrediction
@@ -688,7 +690,7 @@ private:
 
 private:
     static constexpr qint32 AI_BEHAVIOR_SERIALIZATION_VERSION = 33;
-    static constexpr qint32 SERIALIZATION_VERSION = 35;
+    static constexpr qint32 SERIALIZATION_VERSION = 36;
 
     QVector<spGameRule> m_GameRules;
     // victory conditions
@@ -722,6 +724,7 @@ private:
     QStringList m_COBannlist;
     bool m_COBannlistEdited{false};
     bool m_WeatherPrediction{true};
+    bool m_LocalWeather{false};
     bool m_coUnits{true};
     bool m_coGlobalD2D{true};
     bool m_VisionBlock{false};
