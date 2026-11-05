@@ -2282,6 +2282,49 @@ qint32 Unit::getBaseMovementCosts(qint32 x, qint32 y, qint32 curX, qint32 curY, 
     return MovementTableManager::getInstance()->getBaseMovementPoints(m_MovementType, m_pMap->getTerrain(x, y), pCurTerrain, this, trapChecking);
 }
 
+qint32 Unit::getFootprintMovementCosts(qint32 x, qint32 y, qint32 curX, qint32 curY)
+{
+    if (m_pMap == nullptr)
+    {
+        return -1;
+    }
+    qint32 highestCost = 0;
+    const QVector<QPoint> footprint = getUnitFootprint();
+    for (const QPoint & offset : footprint)
+    {
+        const QPoint target(x + offset.x(), y + offset.y());
+        const QPoint previous(curX + offset.x(), curY + offset.y());
+        if (!m_pMap->onMap(target.x(), target.y()))
+        {
+            return -1;
+        }
+        // Cells shared by the old and new footprints are not entered again.
+        if (footprint.contains(QPoint(target.x() - curX, target.y() - curY)))
+        {
+            continue;
+        }
+        Terrain* pTerrain = m_pMap->getTerrain(target.x(), target.y());
+        if (pTerrain == nullptr)
+        {
+            return -1;
+        }
+        Unit* pOccupyingUnit = pTerrain->getUnit();
+        if (pOccupyingUnit != nullptr && pOccupyingUnit != this &&
+            m_pOwner != nullptr && m_pOwner->isEnemyUnit(pOccupyingUnit) &&
+            !pOccupyingUnit->isStealthed(m_pOwner) && !getIgnoreUnitCollision())
+        {
+            return -1;
+        }
+        const qint32 cost = getMovementCosts(target.x(), target.y(), previous.x(), previous.y());
+        if (cost <= 0)
+        {
+            return -1;
+        }
+        highestCost = qMax(highestCost, cost);
+    }
+    return highestCost > 0 ? highestCost : 1;
+}
+
 qint32 Unit::getMovementCosts(qint32 x, qint32 y, qint32 curX, qint32 curY, bool trapChecking)
 {
     qint32 baseCosts = getBaseMovementCosts(x, y, curX, curY, trapChecking);
