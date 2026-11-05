@@ -1215,8 +1215,32 @@ bool Unit::canAttackWithWeapon(qint32 weaponIndex, qint32 unitX, qint32 unitY, q
         QJSValue erg = pInterpreter->doFunction(m_UnitID, "canUseWeapon", args);
         if (!erg.isBool() || erg.toBool())
         {
-            qint32 distance = GlobalUtils::getDistance(QPoint(unitX, unitY), QPoint(targetX, targetY));
+            // Measure range between the closest occupied tiles instead of
+            // using only the two anchor coordinates.
+            const QVector<QPoint> attackerFootprint = getUnitFootprint();
+            const QVector<QPoint> defenderFootprint = pDefender != nullptr
+                                                        ? pDefender->getUnitFootprint()
+                                                        : QVector<QPoint>();
+            qint32 distance = 999999999;
             QPoint position(unitX, unitY);
+            for (const QPoint & attackerOffset : attackerFootprint)
+            {
+                const QPoint attackerTile = QPoint(unitX, unitY) + attackerOffset;
+                for (const QPoint & defenderOffset : defenderFootprint)
+                {
+                    const QPoint defenderTile = QPoint(targetX, targetY) + defenderOffset;
+                    const qint32 tileDistance = GlobalUtils::getDistance(attackerTile, defenderTile);
+                    if (tileDistance < distance)
+                    {
+                        distance = tileDistance;
+                        position = attackerTile;
+                    }
+                }
+            }
+            if (distance == 999999999)
+            {
+                distance = GlobalUtils::getDistance(QPoint(unitX, unitY), QPoint(targetX, targetY));
+            }
             bool inIndirectRange = (distance >= getMinRange(position) || rangeCheck == GameEnums::AttackRangeCheck_None || rangeCheck == GameEnums::AttackRangeCheck_OnlyMax) &&
                                    (distance <= getMaxRange(position) || rangeCheck == GameEnums::AttackRangeCheck_None || rangeCheck == GameEnums::AttackRangeCheck_OnlyMin);
             if (weaponType == GameEnums::WeaponType::WeaponType_Both &&
