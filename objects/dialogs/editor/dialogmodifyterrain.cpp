@@ -238,12 +238,14 @@ void DialogModifyTerrain::load()
                         // Keep the checkbox consistent with the tile data if the four-layer limit is reached.
                         pWeatherCheckbox->setChecked(false);
                         CONSOLE_PRINT("Unable to add local weather. A tile supports at most four different weather types.", GameConsole::eWARNING);
+                        return;
                     }
                 }
                 else
                 {
                     m_pTerrain->removeLocalWeather(weatherId);
                 }
+                m_pMap->getGameRules()->createWeatherSprites();
             });
             m_pPanel->addItem(pWeatherCheckbox);
             y += qMax(pNameLabel->getHeight(), pWeatherCheckbox->getScaledHeight()) + 8;
