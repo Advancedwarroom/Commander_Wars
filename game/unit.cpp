@@ -587,7 +587,24 @@ qint32 Unit::getVision(QPoint position)
     rangeModifier += getCoBonus(position, "getEnemyVisionBonus", &Player::getCoBonus);
     if (!getWeatherImmune())
     {
-        rangeModifier += m_pMap->getGameRules()->getCurrentWeather()->getVisionrangeModifier(this, m_pTerrain);
+        Weather* pWeather = m_pMap->getGameRules()->getCurrentWeather();
+        if (pWeather != nullptr)
+        {
+            rangeModifier += pWeather->getVisionrangeModifier(this, m_pTerrain);
+        }
+        Terrain* pWeatherTerrain = m_pMap->getTerrain(position.x(), position.y());
+        if (pWeatherTerrain != nullptr)
+        {
+            const QStringList localWeather = pWeatherTerrain->getLocalWeatherIds();
+            for (const QString & weatherId : localWeather)
+            {
+                Weather* pLocalWeather = m_pMap->getGameRules()->getWeather(weatherId);
+                if (pLocalWeather != nullptr)
+                {
+                    rangeModifier += pLocalWeather->getVisionrangeModifier(this, pWeatherTerrain);
+                }
+            }
+        }
     }
     qint32 mapHeigth = m_pMap->getMapHeight();
     qint32 mapWidth = m_pMap->getMapWidth();
@@ -674,7 +691,24 @@ qint32 Unit::getBonusMaxRange(QPoint position)
 
     if (!getWeatherImmune())
     {
-        rangeModifier += m_pMap->getGameRules()->getCurrentWeather()->getFirerangeModifier(this, m_pTerrain);
+        Weather* pWeather = m_pMap->getGameRules()->getCurrentWeather();
+        if (pWeather != nullptr)
+        {
+            rangeModifier += pWeather->getFirerangeModifier(this, m_pTerrain);
+        }
+        Terrain* pWeatherTerrain = m_pMap->getTerrain(position.x(), position.y());
+        if (pWeatherTerrain != nullptr)
+        {
+            const QStringList localWeather = pWeatherTerrain->getLocalWeatherIds();
+            for (const QString & weatherId : localWeather)
+            {
+                Weather* pLocalWeather = m_pMap->getGameRules()->getWeather(weatherId);
+                if (pLocalWeather != nullptr)
+                {
+                    rangeModifier += pLocalWeather->getFirerangeModifier(this, pWeatherTerrain);
+                }
+            }
+        }
     }
     // add terrain modifiers
     if (m_pMap->onMap(position.x(), position.y()))
@@ -745,7 +779,24 @@ qint32 Unit::getBonusMinRange(QPoint position)
 
     if (!getWeatherImmune())
     {
-        rangeModifier += m_pMap->getGameRules()->getCurrentWeather()->getMinFirerangeModifier(this, m_pTerrain);
+        Weather* pWeather = m_pMap->getGameRules()->getCurrentWeather();
+        if (pWeather != nullptr)
+        {
+            rangeModifier += pWeather->getMinFirerangeModifier(this, m_pTerrain);
+        }
+        Terrain* pWeatherTerrain = m_pMap->getTerrain(position.x(), position.y());
+        if (pWeatherTerrain != nullptr)
+        {
+            const QStringList localWeather = pWeatherTerrain->getLocalWeatherIds();
+            for (const QString & weatherId : localWeather)
+            {
+                Weather* pLocalWeather = m_pMap->getGameRules()->getWeather(weatherId);
+                if (pLocalWeather != nullptr)
+                {
+                    rangeModifier += pLocalWeather->getMinFirerangeModifier(this, pWeatherTerrain);
+                }
+            }
+        }
     }
     // add terrain modifiers
     if (m_pMap->onMap(position.x(), position.y()))
@@ -1463,7 +1514,23 @@ qint32 Unit::getBonusOffensive(GameAction* pAction, QPoint position, Unit* pDefe
     }
     if (!getWeatherImmune())
     {
-        bonus += m_pMap->getGameRules()->getCurrentWeather()->getOffensiveModifier();
+        Weather* pWeather = m_pMap->getGameRules()->getCurrentWeather();
+        if (pWeather != nullptr)
+        {
+            bonus += pWeather->getOffensiveModifier();
+        }
+        if (m_pTerrain != nullptr)
+        {
+            const QStringList localWeather = m_pTerrain->getLocalWeatherIds();
+            for (const QString & weatherId : localWeather)
+            {
+                Weather* pLocalWeather = m_pMap->getGameRules()->getWeather(weatherId);
+                if (pLocalWeather != nullptr)
+                {
+                    bonus += pLocalWeather->getOffensiveModifier();
+                }
+            }
+        }
     }
     if (m_pMap->getGameRules()->getRankingSystem())
     {
@@ -1740,7 +1807,24 @@ qint32 Unit::getBonusDefensive(GameAction* pAction, QPoint position, Unit* pAtta
     }
     if (!getWeatherImmune())
     {
-        bonus += m_pMap->getGameRules()->getCurrentWeather()->getDefensiveModifier();
+        Weather* pWeather = m_pMap->getGameRules()->getCurrentWeather();
+        if (pWeather != nullptr)
+        {
+            bonus += pWeather->getDefensiveModifier();
+        }
+        Terrain* pWeatherTerrain = m_pMap->getTerrain(position.x(), position.y());
+        if (pWeatherTerrain != nullptr)
+        {
+            const QStringList localWeather = pWeatherTerrain->getLocalWeatherIds();
+            for (const QString & weatherId : localWeather)
+            {
+                Weather* pLocalWeather = m_pMap->getGameRules()->getWeather(weatherId);
+                if (pLocalWeather != nullptr)
+                {
+                    bonus += pLocalWeather->getDefensiveModifier();
+                }
+            }
+        }
     }
     if (m_pMap->getGameRules()->getRankingSystem())
     {
@@ -2140,6 +2224,19 @@ qint32 Unit::getMovementCosts(qint32 x, qint32 y, qint32 curX, qint32 curY, bool
     costs += m_pMap->getTerrain(x, y)->getMovementcostModifier(this, x, y, curX, curY);
 
     qint32 weatherCosts = m_pOwner->getWeatherMovementCostModifier(this, QPoint(x, y));
+    Terrain* pWeatherTerrain = m_pMap->getTerrain(x, y);
+    if (!getWeatherImmune() && pWeatherTerrain != nullptr)
+    {
+        const QStringList localWeather = pWeatherTerrain->getLocalWeatherIds();
+        for (const QString & weatherId : localWeather)
+        {
+            Weather* pLocalWeather = m_pMap->getGameRules()->getWeather(weatherId);
+            if (pLocalWeather != nullptr)
+            {
+                weatherCosts += pLocalWeather->getMovementCostModifier(this, pWeatherTerrain);
+            }
+        }
+    }
 
     if ((costs + weatherCosts <= 0) && (baseCosts > 0))
     {
@@ -2860,7 +2957,23 @@ qint32 Unit::getMovementFuelCostModifier(qint32 fuelCost)
     }
     if (!getWeatherImmune())
     {
-        ret += m_pMap->getGameRules()->getCurrentWeather()->getMovementFuelCostModifier(this, fuelCost);
+        Weather* pWeather = m_pMap->getGameRules()->getCurrentWeather();
+        if (pWeather != nullptr)
+        {
+            ret += pWeather->getMovementFuelCostModifier(this, fuelCost);
+        }
+        if (m_pTerrain != nullptr)
+        {
+            const QStringList localWeather = m_pTerrain->getLocalWeatherIds();
+            for (const QString & weatherId : localWeather)
+            {
+                Weather* pLocalWeather = m_pMap->getGameRules()->getWeather(weatherId);
+                if (pLocalWeather != nullptr)
+                {
+                    ret += pLocalWeather->getMovementFuelCostModifier(this, fuelCost);
+                }
+            }
+        }
     }
     return ret;
 }
