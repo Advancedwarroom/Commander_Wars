@@ -67,6 +67,34 @@ qint32 UnitPathFindingSystem::getCosts(qint32 index, qint32 x, qint32 y, qint32 
             Unit* pUnit = pTerrain->getUnit();
             if (!m_useBasecosts)
             {
+                // Check every newly entered footprint tile for enemy occupancy.
+                const QVector<QPoint> footprint = m_pUnit->getUnitFootprint();
+                for (const QPoint & offset : footprint)
+                {
+                    const QPoint target(x + offset.x(), y + offset.y());
+                    const QPoint previous(curX + offset.x(), curY + offset.y());
+                    if (footprint.contains(QPoint(target.x() - curX, target.y() - curY)))
+                    {
+                        continue;
+                    }
+                    if (!m_pMap->onMap(target.x(), target.y()))
+                    {
+                        m_movecosts[index][direction] = -1;
+                        return m_movecosts[index][direction];
+                    }
+                    Unit* pFootprintUnit = m_pMap->getTerrain(target.x(), target.y())->getUnit();
+                    if (pFootprintUnit != nullptr && pFootprintUnit != m_pUnit &&
+                        m_pUnit->getOwner()->isEnemyUnit(pFootprintUnit) &&
+                        !pFootprintUnit->isStealthed(m_pPlayer) &&
+                        !m_pUnit->getIgnoreUnitCollision() &&
+                        (m_ignoreEnemies == CollisionIgnore::Off ||
+                         (m_ignoreEnemies == CollisionIgnore::OnlyNotMovedEnemies && !pFootprintUnit->getHasMoved())))
+                    {
+                        m_movecosts[index][direction] = -1;
+                        return m_movecosts[index][direction];
+                    }
+                    Q_UNUSED(previous);
+                }
                 // check for an enemy on the field
                 if (pUnit != nullptr &&
                     pUnit->getHp() > 0.0)
