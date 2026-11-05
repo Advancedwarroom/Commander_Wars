@@ -111,7 +111,12 @@ qint32 UnitPathFindingSystem::getCosts(qint32 index, qint32 x, qint32 y, qint32 
                     }
                 }
             }
-            if (m_fast &&
+            const QVector<QPoint> footprint = m_pUnit->getUnitFootprint();
+            // The shortcut cache key only describes the anchor terrain pair.
+            // It is not sufficient for multi-tile units whose newly entered
+            // cells can have different terrain and local-weather modifiers.
+            if (footprint.size() <= 1 &&
+                m_fast &&
                 m_supportsShortCuts &&
                 pTerrain->getBuilding() != nullptr)
             {
@@ -327,10 +332,39 @@ QVector<QPoint> UnitPathFindingSystem::getJsClosestReachableMovePath(QVector<QPo
 
 bool UnitPathFindingSystem::isCrossable(Unit* pNodeUnit, qint32 x, qint32 y, qint32 curX, qint32 curY, qint32 movementCosts, qint32 movepoints)
 {
-    if ((pNodeUnit == nullptr || // empty field
-         (pNodeUnit == m_pUnit) || // current field
+    if (m_pMap == nullptr || !m_pMap->onMap(x, y))
+    {
+        return false;
+    }
+
+    // Every occupied destination cell must be free, belong to this unit,
+    // or be an enemy endpoint handled by the engine's existing collision rules.
+    const QVector<QPoint> footprint = m_pUnit->getUnitFootprint();
+    for (const QPoint & offset : footprint)
+    {
+        const QPoint target(x + offset.x(), y + offset.y());
+        if (!m_pMap->onMap(target.x(), target.y()))
+        {
+            return false;
+        }
+        // Cells shared by the old and new footprints are not newly occupied.
+        if (footprint.contains(QPoint(target.x() - curX, target.y() - curY)))
+        {
+            continue;
+        }
+        Unit* pOccupant = m_pMap->getTerrain(target.x(), target.y())->getUnit();
+        if (pOccupant != nullptr &&
+            pOccupant != m_pUnit &&
+            !blockedByEnemy(pOccupant))
+        {
+            return false;
+        }
+    }
+
+    if ((pNodeUnit == nullptr ||
+         pNodeUnit == m_pUnit ||
          blockedByEnemy(pNodeUnit)) &&
-        (movepoints < 0 || movementCosts <= movepoints) && // inside given cost limits
+        (movepoints < 0 || movementCosts <= movepoints) &&
         (getCosts(getIndex(x, y), x, y, curX, curY, 0) > 0))
     {
         return true;
