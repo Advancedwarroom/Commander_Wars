@@ -825,12 +825,12 @@ void GameRules::createWeatherSprites()
 {
     Mainapp::getInstance()->pauseRendering();
     CONSOLE_PRINT("creating weather Sprites", GameConsole::eDEBUG);
-    if ((m_CurrentWeather < 0) && (m_CurrentWeather < m_Weathers.size()))
+    if (m_CurrentWeather < 0 || m_CurrentWeather >= m_Weathers.size())
     {
-        m_CurrentWeather = 0;
+        m_CurrentWeather = -1;
     }
     resetWeatherSprites();
-    if (m_Weathers.size() > 0)
+    if (m_pMap != nullptr && m_CurrentWeather >= 0 && m_CurrentWeather < m_Weathers.size())
     {
         qint32 width = m_pMap->getMapWidth();
         qint32 heigth = m_pMap->getMapHeight();
@@ -884,6 +884,11 @@ void GameRules::createWeatherSprites()
                 const QStringList localWeatherIds = pTerrain->getLocalWeatherIds();
                 for (const QString & weatherId : localWeatherIds)
                 {
+                    Weather* pGlobalWeather = getCurrentWeather();
+                    if (pGlobalWeather != nullptr && weatherId == pGlobalWeather->getWeatherId())
+                    {
+                        continue;
+                    }
                     Weather* pWeather = getWeather(weatherId);
                     if (pWeather == nullptr)
                     {
