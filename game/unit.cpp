@@ -1137,8 +1137,24 @@ bool Unit::isAttackable(Unit* pDefender, bool ignoreOutOfVisionRange, QPoint uni
             atkPos = unitPos;
         }
 
-        if (m_pOwner->getFieldVisibleType(pDefender->Unit::getX(), pDefender->Unit::getY()) == GameEnums::VisionType::VisionType_Clear ||
-            ignoreOutOfVisionRange)
+        bool targetVisible = ignoreOutOfVisionRange;
+        if (!targetVisible)
+        {
+            // A multi-tile target is attackable when any occupied tile is
+            // clearly visible, not only when its anchor tile is visible.
+            const QPoint defenderPosition = pDefender->Unit::getPosition();
+            for (const QPoint & offset : pDefender->getUnitFootprint())
+            {
+                const QPoint targetTile = defenderPosition + offset;
+                if (m_pMap->onMap(targetTile.x(), targetTile.y()) &&
+                    m_pOwner->getFieldVisibleType(targetTile.x(), targetTile.y()) == GameEnums::VisionType::VisionType_Clear)
+                {
+                    targetVisible = true;
+                    break;
+                }
+            }
+        }
+        if (targetVisible)
         {
             if (!pDefender->isStealthed(m_pOwner, ignoreOutOfVisionRange))
             {
