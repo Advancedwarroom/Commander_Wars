@@ -865,6 +865,59 @@ void GameRules::createWeatherSprites()
             }
         }
     }
+
+    // Keep the global weather as the map-wide base layer. Local weather
+    // sprites are added only to tiles that explicitly carry that weather.
+    if (m_LocalWeather && m_pMap != nullptr)
+    {
+        const qint32 width = m_pMap->getMapWidth();
+        const qint32 heigth = m_pMap->getMapHeight();
+        for (qint32 x = 0; x < width; ++x)
+        {
+            for (qint32 y = 0; y < heigth; ++y)
+            {
+                Terrain* pTerrain = m_pMap->getTerrain(x, y);
+                if (pTerrain == nullptr)
+                {
+                    continue;
+                }
+                const QStringList localWeatherIds = pTerrain->getLocalWeatherIds();
+                for (const QString & weatherId : localWeatherIds)
+                {
+                    Weather* pWeather = getWeather(weatherId);
+                    if (pWeather == nullptr)
+                    {
+                        continue;
+                    }
+                    const QString weatherSprite = pWeather->getWeatherTerrainSprite();
+                    if (weatherSprite.isEmpty())
+                    {
+                        continue;
+                    }
+                    oxygine::ResAnim* pAnim = GameManager::getInstance()->getResAnim(weatherSprite, oxygine::ep_ignore_error);
+                    if (pAnim == nullptr)
+                    {
+                        continue;
+                    }
+                    oxygine::spSprite pSprite = MemoryManagement::create<oxygine::Sprite>();
+                    if (pAnim->getTotalFrames() > 1)
+                    {
+                        oxygine::spTween tween = oxygine::createTween(oxygine::TweenAnim(pAnim), oxygine::timeMS(pAnim->getTotalFrames() * GameMap::frameTime), -1);
+                        pSprite->addTween(tween);
+                    }
+                    else
+                    {
+                        pSprite->setResAnim(pAnim);
+                    }
+                    pSprite->setScale(static_cast<float>(GameMap::getImageSize()) / static_cast<float>(pAnim->getWidth()));
+                    pSprite->setPosition(x * GameMap::getImageSize(), y * GameMap::getImageSize());
+                    pSprite->setPriority(static_cast<qint32>(Mainapp::ZOrder::Weather));
+                    m_WeatherSprites.push_back(pSprite);
+                    m_weatherMaster->addChild(pSprite);
+                }
+            }
+        }
+    }
     Mainapp::getInstance()->continueRendering();
 }
 
