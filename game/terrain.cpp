@@ -1331,6 +1331,25 @@ void Terrain::loadBuilding(const QString & buildingID)
 
 void Terrain::setUnit(spUnit pUnit)
 {
+    if (pUnit.get() != nullptr && m_pMap != nullptr)
+    {
+        // Validate the complete footprint before changing either the old or new anchor.
+        for (const QPoint & offset : pUnit->getUnitFootprint())
+        {
+            const qint32 targetX = Terrain::m_x + offset.x();
+            const qint32 targetY = Terrain::m_y + offset.y();
+            if (!m_pMap->onMap(targetX, targetY))
+            {
+                return;
+            }
+            Terrain* pTargetTerrain = m_pMap->getTerrain(targetX, targetY);
+            Unit* pOccupyingUnit = pTargetTerrain != nullptr ? pTargetTerrain->getUnit() : nullptr;
+            if (pOccupyingUnit != nullptr && pOccupyingUnit != pUnit.get())
+            {
+                return;
+            }
+        }
+    }
     // remove current unit on this field
     if (m_Unit.get() != nullptr)
     {
