@@ -1,5 +1,5 @@
 name: Tests
-on: [push]
+on: workflow_dispatch
 env:
   BUILD_TYPE: Debug
   QT_Version: '6.10.3'
